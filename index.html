@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full de Ruta 2026: Drivim & Bookcar</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel per compilar JSX al navegador -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Configuració Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Scroll suau */
+        html {
+            scroll-behavior: smooth;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Icones SVG inline per no dependre de llibreries externes complexes en un sol fitxer
+        const Icons = {
+            Menu: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>,
+            X: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18 6 6 18"/><path d="m6 6 18 18"/></svg>,
+            FileText: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>,
+            Telescope: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m10.065 12.493-6.18 1.318a.934.934 0 0 1-1.108-.702l-.537-2.536a.934.934 0 0 1 .702-1.108l6.18-1.318a.934.934 0 0 1 1.108.702l.537 2.536a.934.934 0 0 1-.702 1.108Z"/><path d="m13.482 16.013 6.18-1.318a.934.934 0 0 0 .702-1.108l-.537-2.536a.934.934 0 0 0-1.108-.702l-6.18 1.318a.934.934 0 0 0-.702 1.108l.537 2.536a.934.934 0 0 0 1.108.702Z"/><path d="M9.842 15.331 6.953 21.9a1.07 1.07 0 0 0 1.957.86l2.889-6.57"/><path d="M14.158 8.669l2.889-6.57a1.07 1.07 0 0 0-1.957-.86l-2.889 6.57"/></svg>,
+            Settings: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
+            UserCheck: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>,
+            Target: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+            ExternalLink: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>,
+            ChevronRight: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m9 18 6-6-6-6"/></svg>,
+            LinkIcon: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        };
+
+        const SECTIONS = [
+            {
+                id: 'sec-0',
+                title: '0. Auditoria SEO',
+                icon: Icons.FileText,
+                color: 'text-cyan-400',
+                borderColor: 'border-cyan-400/20',
+                bgColor: 'bg-cyan-400/5',
+                hoverColor: 'hover:bg-cyan-400/10'
+            },
+            {
+                id: 'sec-1',
+                title: '1. Coses que vindran',
+                icon: Icons.Telescope,
+                color: 'text-emerald-400',
+                borderColor: 'border-emerald-400/20',
+                bgColor: 'bg-emerald-400/5',
+                hoverColor: 'hover:bg-emerald-400/10'
+            },
+            {
+                id: 'sec-2',
+                title: '2. Millores',
+                icon: Icons.Settings,
+                color: 'text-violet-400',
+                borderColor: 'border-violet-400/20',
+                bgColor: 'bg-violet-400/5',
+                hoverColor: 'hover:bg-violet-400/10'
+            },
+            {
+                id: 'sec-3',
+                title: '3. Autoavaluació',
+                icon: Icons.UserCheck,
+                color: 'text-amber-400',
+                borderColor: 'border-amber-400/20',
+                bgColor: 'bg-amber-400/5',
+                hoverColor: 'hover:bg-amber-400/10'
+            },
+            {
+                id: 'sec-4',
+                title: '4. Objectius 2026',
+                icon: Icons.Target,
+                color: 'text-rose-400',
+                borderColor: 'border-rose-400/20',
+                bgColor: 'bg-rose-400/5',
+                hoverColor: 'hover:bg-rose-400/10'
+            }
+        ];
+
+        const App = () => {
+            const [activeSection, setActiveSection] = useState('sec-0');
+            const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+            const scrollToSection = (id) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                    setActiveSection(id);
+                    setIsMobileMenuOpen(false);
+                }
+            };
+
+            useEffect(() => {
+                const handleScroll = () => {
+                    const scrollPosition = window.scrollY + 100;
+                    
+                    for (const section of SECTIONS) {
+                        const element = document.getElementById(section.id);
+                        if (element) {
+                            const { offsetTop, offsetHeight } = element;
+                            if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+                                setActiveSection(section.id);
+                            }
+                        }
+                    }
+                };
+
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            const Card = ({ children, className = "", sectionColor }) => (
+                <div className={`rounded-xl border ${sectionColor.borderColor} ${sectionColor.bgColor} backdrop-blur-sm p-6 shadow-lg mb-6 transition-all duration-300 hover:shadow-xl hover:border-opacity-40 ${className}`}>
+                    {children}
+                </div>
+            );
+
+            const SectionTitle = ({ children, color }) => (
+                <h3 className={`text-xl font-bold mb-4 ${color} flex items-center gap-2`}>
+                    {children}
+                </h3>
+            );
+
+            const SubSectionTitle = ({ children }) => (
+                <h4 className="text-lg font-semibold text-slate-200 mb-3 mt-6 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                    {children}
+                </h4>
+            );
+
+            const ListItem = ({ children }) => (
+                <li className="flex items-start gap-3 mb-3 text-slate-300 leading-relaxed">
+                    <span className="mt-1.5 min-w-[6px] h-[6px] rounded-full bg-slate-500" />
+                    <span>{children}</span>
+                </li>
+            );
+
+            const Link = ({ href, children }) => (
+                <a 
+                    href={href} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 underline underline-offset-4 decoration-blue-400/30 hover:decoration-blue-300 transition-colors"
+                >
+                    {children}
+                    <Icons.ExternalLink size={14} />
+                </a>
+            );
+
+            return (
+                <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-blue-500/30">
+                    {/* Mobile Header */}
+                    <div className="lg:hidden fixed top-0 w-full z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 p-4 flex justify-between items-center">
+                        <h1 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                            Full de Ruta 2026
+                        </h1>
+                        <button 
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                            className="p-2 text-slate-400 hover:text-white transition-colors"
+                        >
+                            {isMobileMenuOpen ? <Icons.X size={24} /> : <Icons.Menu size={24} />}
+                        </button>
+                    </div>
+
+                    {/* Sidebar Navigation */}
+                    <aside className={`fixed top-0 left-0 h-full w-72 bg-slate-900 border-r border-slate-800 z-40 transform transition-transform duration-300 lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} pt-20 lg:pt-8`}>
+                        <div className="px-6 mb-8 hidden lg:block">
+                            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                                Full de Ruta &<br/>Autoavaluació Ferran
+                            </h1>
+                            <p className="text-slate-500 text-sm mt-2">Estratègia i Anàlisi</p>
+                        </div>
+                        
+                        <nav className="px-3 space-y-1">
+                            {SECTIONS.map((section) => (
+                                <button
+                                    key={section.id}
+                                    onClick={() => scrollToSection(section.id)}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 group
+                                        ${activeSection === section.id 
+                                            ? `${section.bgColor} ${section.color} shadow-sm border border-white/5` 
+                                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}
+                                >
+                                    <section.icon size={18} className={activeSection === section.id ? 'scale-110' : 'group-hover:scale-110 transition-transform'} />
+                                    {section.title}
+                                    {activeSection === section.id && <Icons.ChevronRight size={14} className="ml-auto opacity-50" />}
+                                </button>
+                            ))}
+                        </nav>
+
+                        <div className="absolute bottom-0 w-full p-6 border-t border-slate-800">
+                            <div className="flex items-center gap-3 text-slate-500 text-xs">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                Ferran • SEO & Web Manager
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Main Content */}
+                    <main className="lg:ml-72 pt-24 lg:pt-12 px-4 lg:px-12 pb-24 max-w-5xl mx-auto">
+                        
+                        {/* Intro */}
+                        <div className="mb-12">
+                            <h1 className="text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
+                                Full de Ruta 2026
+                            </h1>
+                            <p className="text-xl text-slate-400 font-light">
+                                Innovació, Operativa i Autoavaluació
+                            </p>
+                        </div>
+
+                        {/* Section 0: Auditoria */}
+                        <section id="sec-0" className="scroll-mt-32 mb-16">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className={`p-2 rounded-lg ${SECTIONS[0].bgColor}`}>
+                                    <Icons.FileText className={SECTIONS[0].color} size={24} />
+                                </div>
+                                <h2 className="text-2xl font-bold text-slate-100">0. Auditoria SEO Drivim 2025</h2>
+                            </div>
+                            
+                            <Card sectionColor={SECTIONS[0]}>
+                                <div className="flex items-center gap-3 text-lg">
+                                    <Icons.LinkIcon size={20} className="text-cyan-400" />
+                                    <Link href="https://ferrandrivim.github.io/informe-seo-drivim-2026/">
+                                        https://ferrandrivim.github.io/informe-seo-drivim-2026/
+                                    </Link>
+                                </div>
+                            </Card>
+                        </section>
+
+                        {/* Section 1: Possibles coses que vindran */}
+                        <section id="sec-1" className="scroll-mt-32 mb-16">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className={`p-2 rounded-lg ${SECTIONS[1].bgColor}`}>
+                                    <Icons.Telescope className={SECTIONS[1].color} size={24} />
+                                </div>
+                                <h2 className="text-2xl font-bold text-slate-100">1. Possibles coses que vindran.</h2>
+                            </div>
+
+                            <p className="text-slate-300 mb-8 text-lg leading-relaxed">
+                                Des de la meva posició transversal (SEO, Content Manager i Responsable Tècnic), detecto on tenim punts de millora tant en visibilitat com en infraestructura per resoldre'ls i que l'equip comercial pugui treballar sense frens:
+                            </p>
+
+                            <div className="grid md:grid-cols-1 gap-6">
+                                <Card sectionColor={SECTIONS[1]}>
+                                    <SectionTitle color="text-emerald-400">Per a Bookcar (Lloguer)</SectionTitle>
+                                    <ul className="space-y-4">
+                                        <ListItem>
+                                            <strong className="text-emerald-300">Integració Total Karve + Walcu + Vinculació GA4 (Prioritat Alta):</strong> Connectar l'ERP de lloguer (Karve) amb el CRM (Walcu) i la correcte vinculació amb GA4 (configuració esdeveniments, etc).
+                                        </ListItem>
+                                        <ListItem>
+                                            <strong className="text-emerald-300">Configuració Plataforma Karve (Personalització):</strong> Adaptar la plataforma a les necessitats específiques de Bookcar per millorar l'eficiència operativa.
+                                        </ListItem>
+                                        <ListItem>
+                                            <strong className="text-emerald-300">Treure App de la Web de Bookcar + Revisar Continguts Landing:</strong> L'App ja no és un actiu estratègic. Cal eliminar les referències a la web per evitar frustració d'usuari i redirigir tot el trànsit al motor de reserves web (Responsive), revisant els continguts de la Landing per enfocar-la a la conversió web directa.
+                                        </ListItem>
+                                        <ListItem>
+                                            <strong className="text-emerald-300">Analítica Avançada (Karve + GA4):</strong> Implementar el seguiment d'esdeveniments de comerç electrònic (add_to_cart, purchase) dins del nou motor de reserves de Karve per tenir dades reals de ROI en campanyes de Google Ads.
+                                        </ListItem>
+                                    </ul>
+                                </Card>
+
+                                <Card sectionColor={SECTIONS[1]}>
+                                    <SectionTitle color="text-emerald-400">Per a Drivim (Concessionaris)</SectionTitle>
+                                    <ul className="space-y-4">
+                                        <ListItem>
+                                            <strong className="text-emerald-300">Reactivitat per a Noves Marques:</strong> Sabent que la direcció vol incorporar noves marques (potencialment asiàtiques/xineses). El meu objectiu és activar l'estratègia de continguts i fitxes de producte SEO quan es confirmi la marca, aprofitant l'estructura existent per no perdre ni un dia en el llançament.
+                                        </ListItem>
+                                        <ListItem>
+                                            <strong className="text-emerald-300">Walcu com a "Controller" (Lògica Condicional):</strong> Fins ara he configurat Walcu perquè sigui útil; ara vull configurar-lo perquè sigui més robust. La intenció és implementar regles de validació condicionals que ajudin a mantenir la qualitat de la dada sense dependre de la memòria de l'usuari.
+                                        </ListItem>
+                                    </ul>
+                                </Card>
+                            </div>
+                        </section>
+
+                        {/* Section 2: Coses que es poden millorar */}
+                        <section id="sec-2" className="scroll-mt-32 mb-16">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className={`p-2 rounded-lg ${SECTIONS[2].bgColor}`}>
+                                    <Icons.Settings className={SECTIONS[2].color} size={24} />
+                                </div>
+                                <h2 className="text-2xl font-bold text-slate-100">2. Coses que es poden millorar.</h2>
+                            </div>
+
+                            <p className="text-slate-300 mb-8 text-lg leading-relaxed">
+                                Des de la meva visió transversal de les dades, proposo iniciatives per connectar els nostres negocis i blindar la qualitat de la informació.
+                            </p>
+
+                            <Card sectionColor={SECTIONS[2]}>
+                                <SectionTitle color="text-violet-400">1. Propostes de Regles Tècniques Walcu (Control):</SectionTitle>
+                                <ol className="list-decimal list-inside space-y-4 text-slate-300 ml-2">
+                                    <li className="leading-relaxed pl-2">
+                                        <strong className="text-violet-300">Validació d'Origen:</strong> Camp "Com ens ha conegut" obligatori per crear leads manuals. (Dada necessària per a SEO i Màrqueting).
+                                    </li>
+                                    <li className="leading-relaxed pl-2">
+                                        <strong className="text-violet-300">Recollida de Dades de Competència:</strong> Si es marca "No encaja precio" o "Compra competencia", desplegament automàtic de camp obligatori per anotar la contraoferta.
+                                    </li>
+                                    <li className="leading-relaxed pl-2">
+                                        <strong className="text-violet-300">Bloqueig de "Pedido" sense Model/Mètode:</strong> Impedir que un comercial passi un lead a estat "Pedido" o "Entregado" si no ha informat obligatòriament els camps de "Model" i "Mètode d'Adquisició". Això evita vendes fantasma i assegura la traçabilitat bàsica de la venda.
+                                    </li>
+                                    <li className="leading-relaxed pl-2">
+                                        <strong className="text-violet-300">Bloqueig tancament "Altre":</strong> Impedir el tancament d'una oportunitat amb el subestat "Altre - necessita explicació" si prèviament no hi ha una explicació detallada registrada en un comentari o nota del lead. Això evita calaixos de sastre sense informació útil.
+                                    </li>
+                                    <li className="leading-relaxed pl-2">
+                                        <strong className="text-violet-300">Alerta d'Inactivitat:</strong> Si un lead en estat "En negociació" no té cap interacció (nota, trucada, email) registrada en els últims 7 dies, el sistema ha de forçar una tasca de seguiment o bloquejar el canvi d'estat fins que es registri activitat.
+                                    </li>
+                                </ol>
+                            </Card>
+
+                            <Card sectionColor={SECTIONS[2]}>
+                                <SectionTitle color="text-violet-400">2. Estratègia Automatitzacions Predictives Walcu (Cicle de Vida):</SectionTitle>
+                                <ul className="space-y-4">
+                                    <ListItem>
+                                        <strong className="text-violet-300">Renovació Renting / Finançament Flexible:</strong> Alertes automàtiques a l'equip comercial 6 mesos abans que vencin contractes.
+                                    </ListItem>
+                                    <ListItem>
+                                        <strong className="text-violet-300">Recuperar Lead Obert 30 dies sense contactar:</strong> Automatització per reactivar leads freds amb un mail de "Encara estàs buscant?" + oferta especial.
+                                    </ListItem>
+                                    <ListItem>
+                                        <strong className="text-violet-300">Campanyes Estacionals Taller:</strong> Automatitzacions per a càrrega d'aire condicionat (maig) o pneumàtics d'hivern (novembre).
+                                    </ListItem>
+                                    <ListItem>
+                                        <strong className="text-violet-300"><Link href="https://docs.google.com/document/d/1boWEdgg3ZpFo5ZJ79lQXo4o__o3iL541r9-QNHv0oks/edit?usp=sharing">Campanya Porta a un Amic</Link>:</strong> Al cap de 3 mesos d'haver comprat i verificat que la ressenya és positiva (nou camp a walcu de “Satisfacción”?). La clau és que tots dos guanyin. L'incentiu ha de ser prou atractiu per moure a l'acció, però sostenible pel marge comercial.
+                                        <div className="ml-6 mt-3 space-y-2 border-l-2 border-violet-800/50 pl-4">
+                                            <div className="mb-2">
+                                                <span className="font-semibold text-slate-200">El Padrí (Client Actual):</span> Necessita un premi immediat o útil a curt termini.
+                                                <ul className="list-disc ml-5 mt-1 text-sm text-slate-400">
+                                                    <li><em>Opció A (Taller):</em> Val de 50€ - 100€ de descompte en la propera revisió o manteniment.</li>
+                                                    <li><em>Opció B (Regal Directe):</em> Targeta regal d'Amazon de 50€ (molt efectiu perquè és "diners líquids").</li>
+                                                    <li><em>Opció C (Servei):</em> Un rentat integral Premium gratuït (valor percebut alt, cost intern baix).</li>
+                                                </ul>
+                                            </div>
+                                            <div>
+                                                <span className="font-semibold text-slate-200">L'Amic (Nou Client):</span> Necessita una empenta final per triar Drivim.
+                                                <ul className="list-disc ml-5 mt-1 text-sm text-slate-400">
+                                                    <li><em>Opció:</em> 200€ de descompte addicional en la compra de qualsevol vehicle (Nou o VO) o extensió de garantia gratuïta.</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </ListItem>
+                                </ul>
+                            </Card>
+
+                            <Card sectionColor={SECTIONS[2]}>
+                                <SectionTitle color="text-violet-400">3. Automatització i Sinergies (Web & Bookcar):</SectionTitle>
+                                <ul className="space-y-4">
+                                    <ListItem>
+                                        <strong className="text-violet-300">Automatització Completa d’Actualització Ofertes Finançament Flexible:</strong> Implementar un sistema per actualitzar automàticament les ofertes de "Finançament Flexible" i Rènting a la web. Objectiu: Eliminar l'error humà i garantir que el preu web sempre coincideix amb la campanya vigent.
+                                    </ListItem>
+                                    <ListItem>
+                                        <strong className="text-violet-300">Codi Descompte Karve "Cotxe Substitució":</strong> Crear un codi automàtic de descompte "TALLER3DIES" per a clients amb reparacions llargues ({'>'}3 dies), incentivant l'ús de Bookcar i millorant la satisfacció del client de taller.
+                                    </ListItem>
+                                </ul>
+                            </Card>
+
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <Card sectionColor={SECTIONS[2]}>
+                                    <SectionTitle color="text-violet-400">4. Iniciativa de Fidelització (Suport Tècnic)</SectionTitle>
+                                    <ul className="space-y-2">
+                                        <ListItem>
+                                            <strong className="text-violet-300">El "Passaport Drivim" (Visió de Client Únic):</strong> Tècnicament, tenim les dades per saber qui ens compra un cotxe i qui ens lloga una furgoneta. Proposo crear automatismes a Walcu que detectin aquestes oportunitats i generin avantatges creuats (ex: mail automàtic amb descompte de lloguer en comprar un cotxe). Jo m'encarrego de la lògica que ho fa possible.
+                                        </ListItem>
+                                    </ul>
+                                </Card>
+
+                                <Card sectionColor={SECTIONS[2]}>
+                                    <SectionTitle color="text-violet-400">5. Nou Mòdul d'Ofertes Renting Particular:</SectionTitle>
+                                    <ul className="space-y-2">
+                                        <ListItem>
+                                            <strong className="text-violet-300">Replicar Sistema Finançament Flexible:</strong> Crear un nou mòdul web específic per a ofertes de Renting a Particulars, replicant exactament el sistema tècnic i visual que ja utilitzem per al Finançament Flexible. L'objectiu és estandarditzar la gestió d'ofertes i aprofitar una estructura que ja sabem que funciona i és fàcil de mantenir.
+                                        </ListItem>
+                                    </ul>
+                                </Card>
+
+                                <Card sectionColor={SECTIONS[2]}>
+                                    <SectionTitle color="text-violet-400">6. Nou Mòdul de Pàgina de Centres:</SectionTitle>
+                                    <ul className="space-y-2">
+                                        <ListItem>
+                                            <strong className="text-violet-300">Renovació de Disseny:</strong> Actualitzar completament la pàgina de "Centres" (ubicacions). L'objectiu és modernitzar la imatge, millorar la usabilitat mòbil i facilitar que el client trobi ràpidament el taller o concessionari més proper amb una millor integració de Google Maps i dades de contacte clares.
+                                        </ListItem>
+                                    </ul>
+                                </Card>
+
+                                <Card sectionColor={SECTIONS[2]}>
+                                    <SectionTitle color="text-violet-400">7. Auditoria i Millora de Landings Actives Drivim + Bookcar:</SectionTitle>
+                                    <ul className="space-y-2">
+                                        <ListItem>
+                                            <strong className="text-violet-300">Revisió i Optimització:</strong> Revisió periòdica de les <em>landings</em> de captació actuals. Analitzar el rendiment a nivell de disseny i conversió, i aplicar millores de SEO <em>on-page</em> i redisseny visual on sigui necessari per assegurar que estem captant trànsit de qualitat i oferint una imatge actualitzada.
+                                        </ListItem>
+                                    </ul>
+                                </Card>
+                            </div>
+
+                            <Card sectionColor={SECTIONS[2]} className="mt-6">
+                                <SectionTitle color="text-violet-400">8. Experiència d'Usuari i Web (Frontend):</SectionTitle>
+                                <ul className="space-y-4">
+                                    <ListItem>
+                                        <strong className="text-violet-300">Millores Homepage:</strong> Redissenyar la capçalera (Header) per fer-la més moderna i neta, i millorar les seccions inferiors per transmetre confiança immediata.
+                                        <div className="ml-6 mt-1 text-sm text-slate-400">
+                                            <em>Insight Tècnic:</em> Implementar "Video Facades" (càrrega diferida de vídeos) per millorar la velocitat de càrrega mòbil, que actualment ens penalitza.
+                                        </div>
+                                    </ListItem>
+                                    <ListItem>
+                                        <strong className="text-violet-300">Millora Pàgina Cita Prèvia:</strong> La pàgina de "Cita Taller" és un punt de fuga actualment.
+                                        <ul className="list-disc ml-5 mt-1 text-sm text-slate-400">
+                                            <li>Afegir CTA Bookcar: "Lloguer cotxe substitució".</li>
+                                            <li>Afegir CTA "Te puede interesar": Ofertes d'accessoris, recanvis, neteja integral, etc.</li>
+                                        </ul>
+                                    </ListItem>
+                                    <ListItem>
+                                        <strong className="text-violet-300">CTA Slider a la Homepage de Bookcar:</strong> Dirigit específicament a les noves landings d'ús (Casaments, Mudances, Escapades) per millorar la navegació i la conversió.
+                                    </ListItem>
+                                    <ListItem>
+                                        <strong className="text-violet-300">Revisió Landings Actuals Bookcar:</strong> Analitzar les landings existents per detectar possibles millores d'usabilitat i conversió.
+                                    </ListItem>
+                                </ul>
+                            </Card>
+
+                            <div className="grid md:grid-cols-2 gap-6 mt-6">
+                                <Card sectionColor={SECTIONS[2]}>
+                                    <SectionTitle color="text-violet-400">9. Automatització del Blog amb IA:</SectionTitle>
+                                    <ul className="space-y-2">
+                                        <ListItem>
+                                            <strong className="text-violet-300">Blog Automàtic amb Make:</strong> Crear un flux de treball (Make + OpenAI) per generar esborranys de notícies de tendències d'automoció, actualitat i consells de manteniment, mantenint la web fresca amb mínim esforç manual i atacant keywords informatives.
+                                        </ListItem>
+                                    </ul>
+                                </Card>
+
+                                <Card sectionColor={SECTIONS[2]}>
+                                    <SectionTitle color="text-violet-400">10. Recuperació de Contingut Antic (SEO Històric):</SectionTitle>
+                                    <ul className="space-y-2">
+                                        <ListItem>
+                                            <strong className="text-violet-300">Revisió Enllaços i Contingut:</strong> Utilitzar IA per analitzar posts antics del blog, actualitzar enllaços trencats, refrescar dades i recuperar l'autoritat SEO perduda que hem anat deixant enrere.
+                                        </ListItem>
+                                    </ul>
+                                </Card>
+                            </div>
+
+                            <Card sectionColor={SECTIONS[2]} className="mt-6">
+                                <SectionTitle color="text-violet-400">11. Estratègia SEO Long Tail per a Bookcar:</SectionTitle>
+                                <ul className="space-y-3">
+                                    <ListItem>
+                                        <strong className="text-violet-300">Landings de Nínxol Local:</strong> Crear pàgines específiques per a cerques locals que els grans operadors ignoren. Cal revisar bé les keywords adequades.
+                                        <ul className="list-disc ml-5 mt-2 text-sm text-slate-400">
+                                            <li><strong>Exemples:</strong> "Cotxes per a casaments a Badalona", "Furgonetes mudança Badalona sense conductor"</li>
+                                            <li className="mt-1"><em>Insight Tècnic:</em> Això captarà trànsit molt qualificat que ara se n'emporten els agregadors.</li>
+                                        </ul>
+                                    </ListItem>
+                                </ul>
+                            </Card>
+
+                            <Card sectionColor={SECTIONS[2]} className="mt-6">
+                                <SectionTitle color="text-violet-400">12. Revisió Landings Actuals Bookcar:</SectionTitle>
+                                <ul className="space-y-2">
+                                    <ListItem>
+                                        <strong className="text-violet-300">Optimització UX/CRO:</strong> Analitzar les landings existents per detectar possibles millores d'usabilitat i conversió.
+                                    </ListItem>
+                                </ul>
+                            </Card>
+                        </section>
+
+                        {/* Section 3: Autoavaluació 2025 */}
+                        <section id="sec-3" className="scroll-mt-32 mb-16">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className={`p-2 rounded-lg ${SECTIONS[3].bgColor}`}>
+                                    <Icons.UserCheck className={SECTIONS[3].color} size={24} />
+                                </div>
+                                <h2 className="text-2xl font-bold text-slate-100">3. Autoavaluació 2025</h2>
+                            </div>
+
+                            <p className="text-slate-300 mb-8 text-lg leading-relaxed">
+                                Anàlisi del meu rendiment com a responsable de SEO, Web i CRM.
+                            </p>
+
+                            <Card sectionColor={SECTIONS[3]}>
+                                <SectionTitle color="text-amber-400">🟢 Punts Forts (La feina tècnica feta)</SectionTitle>
+                                
+                                <div className="space-y-8">
+                                    <div>
+                                        <SubSectionTitle>1. Gestió Integral de Walcu (Efficiency Manager)</SubSectionTitle>
+                                        <ul className="space-y-2">
+                                            <ListItem>He mantingut i optimitzat l'ecosistema del CRM amb <strong>més de 50 regles actives</strong>.</ListItem>
+                                            <ListItem><strong>Impacte Real:</strong> He aconseguit que un volum de <strong>31.594 leads</strong> flueixi correctament pel sistema sense necessitat de supervisió manual constant. Els meus automatismes han actuat com un filtre, estalviant hores de gestió manual a l'equip comercial.</ListItem>
+                                        </ul>
+                                    </div>
+
+                                    <div>
+                                        <SubSectionTitle>2. Arquitectura d'Assignació Digital</SubSectionTitle>
+                                        <ul className="space-y-2">
+                                            <ListItem>
+                                                He programat el flux d'assignació <Link href="https://crm.walcu.com/crm/rules/692865f620e1b8457464db43">"Asignación v3"</Link> + <Link href="https://crm.walcu.com/crm/rules/692964e6facf5263e0402bac">“Regla d’avisos +4h“</Link>.
+                                            </ListItem>
+                                            <ListItem>És un sistema lògic complex que assegura que els leads que entren per la web (la meva responsabilitat directa) arribin al comercial adequat segons marca, horari i disponibilitat, evitant pèrdues en caps de setmana i canibalitzacions de vendes entre comercials de la mateixa botiga i de la mateixa marca però diferent ubicació.</ListItem>
+                                            <ListItem><strong>Xarxa de Seguretat Tècnica:</strong> He implementat regles de reassignació automàtica per inactivitat i detecció de duplicats per protegir la base de dades.</ListItem>
+                                        </ul>
+                                    </div>
+
+                                    <div>
+                                        <SubSectionTitle>3. Manteniment i Data Quality</SubSectionTitle>
+                                        <ul className="space-y-2">
+                                            <ListItem><strong>Revisió Importació Leads i Correcte Funcionament de Walcu:</strong> He assegurat la integritat de la importació de leads, garantint que cap oportunitat es perdi per errors tècnics i que les dades siguin fiables.</ListItem>
+                                            <ListItem><strong>Auditoria i Neteja de Base de Dades (Walcu):</strong> Realitzar una neteja periòdica de contactes duplicats o obsolets a Walcu per mantenir la base de dades sana i eficient. Això facilita la segmentació per a futures campanyes i millora la qualitat de les dades visibles als KPI's.</ListItem>
+                                        </ul>
+                                    </div>
+
+                                    <div>
+                                        <SubSectionTitle>4. Sinergia i Comunicació amb Call Center</SubSectionTitle>
+                                        <ul className="space-y-2">
+                                            <ListItem>He actuat com a pont efectiu entre l'equip tècnic/Call Center i les necessitats de negoci per resoldre qüestions relacionades amb el CRM Walcu (rendiment, incidències, millores, etc.).</ListItem>
+                                        </ul>
+                                    </div>
+
+                                    <div>
+                                        <SubSectionTitle>5. Aprenentatge i Implementació de IA</SubSectionTitle>
+                                        <ul className="space-y-2">
+                                            <ListItem>He integrat eines d'Intel·ligència Artificial en el meu dia a dia (creació d’agents i projectes a ChatGPT), aconseguint automatitzar parcialment tasques administratives complexes com la facturació de Google/Meta, l'actualització d'ofertes de rènting empresa i finançament flexible.</ListItem>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </Card>
+
+                            <Card sectionColor={SECTIONS[3]} className="border-orange-400/20 bg-orange-400/5">
+                                <SectionTitle color="text-orange-400">🟠 Àrees de Millora i Context Personal</SectionTitle>
+                                <ul className="space-y-4">
+                                    <ListItem>
+                                        <strong className="text-orange-300">Regularitat Presencial:</strong> Sóc conscient que la meva puntualitat ha de millorar i és el meu compromís immediat per al 2026.
+                                    </ListItem>
+                                    <ListItem>
+                                        <strong className="text-orange-300">Proactivitat en Millores:</strong> Vull aprofitar el meu coneixement tècnic per proposar solucions de negoci (com les regles condicionals) abans que se'm demanin.
+                                    </ListItem>
+                                    <ListItem>
+                                        <strong className="text-orange-300">Context:</strong> El 2025 ha estat un any de reptes personals que han afectat la meva regularitat, però tanco l'any amb l'estabilitat i l'energia necessàries per afrontar els projectes tècnics del 2026.
+                                    </ListItem>
+                                </ul>
+                            </Card>
+                        </section>
+
+                        {/* Section 4: Objectius per al 2026 */}
+                        <section id="sec-4" className="scroll-mt-32 mb-16">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className={`p-2 rounded-lg ${SECTIONS[4].bgColor}`}>
+                                    <Icons.Target className={SECTIONS[4].color} size={24} />
+                                </div>
+                                <h2 className="text-2xl font-bold text-slate-100">4. Objectius per al 2026</h2>
+                            </div>
+
+                            <Card sectionColor={SECTIONS[4]}>
+                                <ol className="list-decimal list-inside space-y-6 text-slate-300 ml-2">
+                                    <li className="leading-relaxed pl-2">
+                                        <strong className="text-rose-300">Evolució de Walcu:</strong> Passar de "mantenir el CRM" a "blindar els processos" mitjançant programació condicional avançada.
+                                    </li>
+                                    <li className="leading-relaxed pl-2">
+                                        <strong className="text-rose-300">SEO Local i Velocitat Web:</strong> Executar les millores tècniques de l'auditoria (Core Web Vitals, temps de càrrega) per millorar el posicionament a les cerques locals a Badalona.
+                                    </li>
+                                    <li className="leading-relaxed pl-2">
+                                        <strong className="text-rose-300">Integració de Sistemes:</strong> Aconseguir que Karve i Walcu es comuniquin automàticament com ho fèiem amb Flit2go.
+                                    </li>
+                                </ol>
+                            </Card>
+                        </section>
+
+                        <footer className="text-center text-slate-600 text-sm py-8 border-t border-slate-800">
+                            <p>© 2026 Ferran - Full de Ruta & Autoavaluació</p>
+                        </footer>
+
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
